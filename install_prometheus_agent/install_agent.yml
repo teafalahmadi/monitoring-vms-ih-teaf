@@ -1,0 +1,83 @@
+---
+- name: Install Node Exporter on VMs
+  hosts: all
+  become: yes
+  vars:
+    node_exporter_version: "1.9.1"  # Latest as of April 2025
+    node_exporter_user: "node_exporter"
+    install_dir: "/opt/node_exporter"
+    node_exporter_url: "https://github.com/prometheus/node_exporter/releases/download/v{{ node_exporter_version }}/node_exporter-{{ node_exporter_version }}.linux-amd64.tar.gz"
+
+  tasks:
+
+    - name: Install required packages
+      apt:
+        name:
+          - curl
+          - tar
+        state: present
+        update_cache: yes
+
+    - name: Create node_exporter system user
+      user:
+        name: "{{ node_exporter_user }}"
+        system: yes
+        shell: /sbin/nologin
+
+    - name: Create installation directory
+      file:
+        path: "{{ install_dir }}"
+        state: directory
+        owner: "{{ node_exporter_user }}"
+        group: "{{ node_exporter_user }}"
+        mode: '0755'
+
+    - name: Download Node Exporter archive
+      get_url:
+        url: "{{ node_exporter_url }}"
+        dest: "/tmp/node_exporter.tar.gz"
+        mode: '0644'
+
+    - name: Extract Node Exporter archive
+      unarchive:
+        src: "/tmp/node_exporter.tar.gz"
+        dest: "/tmp/"
+        remote_src: yes
+
+    - name: Move Node Exporter binary
+      copy:
+        remote_src: yes
+        src: "/tmp/node_exporter-{{ node_exporter_version }}.linux-amd64/node_exporter"
+        dest: "{{ install_dir }}/node_exporter"
+        owner: "{{ node_exporter_user }}"
+        group: "{{ node_exporter_user }}"
+        mode: '0755'
+
+    - name: Create systemd service for Node Exporter
+      copy:
+        dest: /etc/systemd/system/node_exporter.service
+        mode: '0644'
+        content: |
+          [Unit]
+          Description=Node Exporter
+          Wants=network-online.target
+          After=network-online.target
+
+          [Service]
+          User={{ node_exporter_user }}
+          Group={{ node_exporter_user }}
+          Type=simple
+          ExecStart={{ install_dir }}/node_exporter
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Reload systemd daemon
+      systemd:
+        daemon_reload: yes
+
+    - name: Enable and start Node Exporter service
+      systemd:
+        name: node_exporter
+        enabled: yes
+        state: started
