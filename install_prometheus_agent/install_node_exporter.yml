@@ -1,0 +1,51 @@
+---
+- name: Install and Run Node Exporter
+  hosts: prometheus_agents
+  become: true
+  tasks:
+    - name: Update apt packages
+      apt:
+        update_cache: yes
+
+    - name: Install wget
+      apt:
+        name: wget
+        state: present
+
+    - name: Download Node Exporter binary
+      get_url:
+        url: https://github.com/prometheus/node_exporter/releases/download/v1.8.1/node_exporter-1.8.1.linux-amd64.tar.gz
+        dest: /tmp/node_exporter.tar.gz
+
+    - name: Extract Node Exporter
+      unarchive:
+        src: /tmp/node_exporter.tar.gz
+        dest: /usr/local/bin/
+        remote_src: yes
+
+    - name: Move binary to /usr/local/bin
+      command: mv /usr/local/bin/node_exporter-1.8.1.linux-amd64/node_exporter /usr/local/bin/node_exporter
+      args:
+        creates: /usr/local/bin/node_exporter
+
+    - name: Create systemd service
+      copy:
+        dest: /etc/systemd/system/node_exporter.service
+        content: |
+          [Unit]
+          Description=Node Exporter
+          After=network.target
+
+          [Service]
+          User=root
+          ExecStart=/usr/local/bin/node_exporter
+          Restart=always
+
+          [Install]
+          WantedBy=default.target
+
+    - name: Start and enable Node Exporter
+      systemd:
+        name: node_exporter
+        enabled: yes
+        state: started

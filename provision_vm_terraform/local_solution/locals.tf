@@ -1,5 +1,5 @@
 locals {
-  prefix = "devops2-week8"
+  prefix = "devops2-week8-teaf-1"
 
   address_space = ["10.0.0.0/16"]
 
@@ -92,13 +92,13 @@ locals {
   public_ips = {
     backend_ip = {
 
-      allocation_method = "Dynamic"
+      allocation_method = "Static"
 
     }
 
     frontend_ip = {
 
-      allocation_method = "Dynamic"
+      allocation_method = "Static"
 
     }
 

@@ -4,7 +4,7 @@ module "rg" {
 
   name = "${local.prefix}-rg"
 
-  location = "Central India"
+  location = "Italy North"
 
 }
 
@@ -80,7 +80,7 @@ module "public_ip" {
 
   source = "../Azure/azurerm_public_ip"
 
-  sku = "Basic"
+  sku = "Standard"
 
   resource_group_name = module.rg.resource_group.name
 
@@ -130,7 +130,7 @@ module "virtual_machine" {
 
   computer_name = each.key
 
-  vm_size = "Standard_D2s_v3"
+  vm_size = "Standard_B1ls"
 
   username = "azureuser"
 
